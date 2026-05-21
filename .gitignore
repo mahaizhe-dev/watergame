@@ -1,0 +1,26 @@
+# 引擎内部目录（只读，不属于项目代码）
+engine-docs/
+examples/
+templates/
+urhox-libs/
+schemas/
+prompts/
+lua-tools/
+.emmylua/
+.claude/
+
+# 构建产物和临时文件
+dist/
+.build/
+.tmp/
+logs/
+
+# 项目配置（引擎自动生成）
+.project/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# meta 文件（引擎生成）
+*.meta
