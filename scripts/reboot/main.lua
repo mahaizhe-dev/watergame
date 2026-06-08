@@ -4,7 +4,7 @@ local AppRouter = require("reboot.core.AppRouter")
 local controller_ = nil
 
 function Start()
-    graphics.windowTitle = "Water Sort Reboot"
+    graphics.windowTitle = "猫咪倒水屋"
 
     UI.Init({
         fonts = {

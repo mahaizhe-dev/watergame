@@ -1,15 +1,15 @@
 local StarterLevels = {
     chapter = {
         id = "chapter01",
-        name = "Mist Port Trial",
-        districtName = "South Bank Neon",
-        tagline = "Bring the hillside city lights back online.",
+        name = "甜爪乐园",
+        districtName = "云朵猫镇",
+        tagline = "帮小猫把彩虹瓶子整理整齐。",
     },
 
     levels = {
         {
             id = "chapter01-level01",
-            title = "Rail Exit",
+            title = "奶油广场",
             board = {
                 capacity = 4,
                 tubes = {
@@ -25,7 +25,7 @@ local StarterLevels = {
         },
         {
             id = "chapter01-level02",
-            title = "Bridge Rain",
+            title = "毛线小桥",
             board = {
                 capacity = 4,
                 tubes = {
@@ -42,7 +42,7 @@ local StarterLevels = {
         },
         {
             id = "chapter01-level03",
-            title = "Cable Sign",
+            title = "猫耳索道",
             board = {
                 capacity = 4,
                 tubes = {

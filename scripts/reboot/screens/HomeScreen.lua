@@ -1,11 +1,13 @@
 local UI = require("urhox-libs/UI")
 local ThemeTokens = require("reboot.design.ThemeTokens")
-local DistrictBackdrop = require("reboot.ui.DistrictBackdrop")
 local SoftButton = require("reboot.ui.SoftButton")
 local StatChip = require("reboot.ui.StatChip")
 local GlassCard = require("reboot.ui.GlassCard")
 
 local HomeScreen = {}
+
+local HERO_IMAGE = "assets/images/ui/cat-home-hero-v1.png"
+local MASCOT_IMAGE = "assets/images/ui/cat-mascot-badge-v1.png"
 
 local function BuildMoodTag(text, color)
     return UI.Panel {
@@ -13,17 +15,17 @@ local function BuildMoodTag(text, color)
         paddingRight = 12,
         paddingTop = 7,
         paddingBottom = 7,
-        backgroundColor = { color[1], color[2], color[3], 26 },
+        backgroundColor = { color[1], color[2], color[3], 34 },
         borderRadius = 999,
         borderWidth = 1,
-        borderColor = { color[1], color[2], color[3], 84 },
+        borderColor = { color[1], color[2], color[3], 72 },
         children = {
             UI.Label {
                 text = text,
                 fontSize = ThemeTokens.typography.caption,
-                fontColor = color,
+                fontColor = ThemeTokens.colors.textPrimary,
             },
-        }
+        },
     }
 end
 
@@ -31,182 +33,227 @@ function HomeScreen.Create(ctx)
     ctx = ctx or {}
     local chapter = ctx.chapter or {}
     local progress = ctx.progress or {}
+    local colors = ThemeTokens.colors
+    local unlockedCount = progress.unlockedLevelCount or 0
+    local hasPlayableLevel = unlockedCount > 0
+    local currentLevel = hasPlayableLevel and math.max(progress.currentLevelIndex or 1, 1) or 0
+    local currentLevelText = currentLevel == 0 and "--" or string.format("%02d", currentLevel)
+    local primaryButtonText = currentLevel == 0 and "查看章节" or string.format("开始第 %s 关", currentLevelText)
 
     local root = UI.Panel {
         width = "100%",
         height = "100%",
-        paddingLeft = 14,
-        paddingRight = 14,
-        paddingTop = 18,
-        paddingBottom = 14,
-        gap = 14,
+        justifyContent = "flex-end",
+        backgroundColor = colors.creamGlow,
         children = {
-            DistrictBackdrop {},
             UI.Panel {
-                width = "100%",
+                position = "absolute",
+                top = 0, left = 0, right = 0, bottom = 0,
+                backgroundImage = HERO_IMAGE,
+                backgroundFit = "cover",
+                backgroundPosition = "center top",
+            },
+            UI.Panel {
+                position = "absolute",
+                top = 0, left = 0, right = 0, bottom = 0,
+                pointerEvents = "none",
+                children = {
+                    UI.Panel {
+                        width = "100%",
+                        flexGrow = 7,
+                        backgroundGradient = {
+                            type = "linear",
+                            direction = "to-bottom",
+                            from = { 255, 255, 255, 12 },
+                            to = { 255, 255, 255, 0 },
+                        },
+                    },
+                    UI.Panel {
+                        width = "100%",
+                        flexGrow = 7,
+                        backgroundGradient = {
+                            type = "linear",
+                            direction = "to-bottom",
+                            from = { 255, 252, 249, 0 },
+                            to = { 255, 245, 237, 235 },
+                        },
+                    },
+                    UI.Panel {
+                        width = "100%",
+                        flexGrow = 5,
+                        backgroundColor = { 255, 245, 237, 235 },
+                    },
+                },
+            },
+            UI.Panel {
+                position = "absolute",
+                top = 22,
+                right = 14,
+                width = 92,
+                height = 92,
+                backgroundImage = MASCOT_IMAGE,
+                backgroundFit = "contain",
+            },
+            UI.Panel {
+                position = "absolute",
+                top = 28,
+                left = 14,
                 gap = 8,
                 children = {
-                    UI.Label {
-                        text = "Cyber Chongqing Pour",
-                        fontSize = ThemeTokens.typography.hero,
-                        fontColor = ThemeTokens.colors.textPrimary,
-                    },
-                    UI.Label {
-                        text = "A portrait-first casual puzzle game with toy-like liquids and a soft neon mountain city.",
-                        fontSize = ThemeTokens.typography.body,
-                        fontColor = ThemeTokens.colors.textSecondary,
-                    },
+                    BuildMoodTag("萌系休闲新游", colors.coralFizz),
                     UI.Panel {
-                        flexDirection = "row",
-                        flexWrap = "wrap",
-                        gap = 8,
+                        paddingLeft = 14,
+                        paddingRight = 14,
+                        paddingTop = 10,
+                        paddingBottom = 10,
+                        backgroundColor = { 255, 251, 247, 210 },
+                        borderRadius = 20,
+                        borderWidth = 1,
+                        borderColor = { 255, 255, 255, 132 },
                         children = {
-                            BuildMoodTag("Cute sci-fi", ThemeTokens.colors.mistCyan),
-                            BuildMoodTag("Mobile portrait", ThemeTokens.colors.mangoGlow),
-                            BuildMoodTag("Expandable rules", ThemeTokens.colors.jadeMint),
+                            UI.Label {
+                                text = "猫咪倒水屋",
+                                fontSize = ThemeTokens.typography.hero,
+                                fontColor = colors.textPrimary,
+                            },
                         },
                     },
                 },
             },
             UI.Panel {
                 width = "100%",
-                flexDirection = "row",
-                flexWrap = "wrap",
-                gap = 10,
+                paddingLeft = 14,
+                paddingRight = 14,
+                paddingTop = 18,
+                paddingBottom = 16,
+                gap = 12,
                 children = {
-                    StatChip {
-                        label = "Current chapter",
-                        value = chapter.name or "Chapter 01",
-                        valueColor = ThemeTokens.colors.mistCyan,
-                        width = "48%",
-                        alignItems = "flex-start",
-                    },
-                    StatChip {
-                        label = "Unlocked levels",
-                        value = tostring(progress.unlockedLevelCount or 1),
-                        valueColor = ThemeTokens.colors.coralFizz,
-                        width = "48%",
-                        alignItems = "flex-start",
-                    },
-                },
-            },
-            GlassCard {
-                gap = 16,
-                paddingTop = 20,
-                paddingBottom = 20,
-                children = {
-                    UI.Panel {
-                        width = "100%",
-                        gap = 5,
+                    GlassCard {
+                        gap = 12,
+                        backgroundColor = { 255, 250, 246, 226 },
+                        borderColor = { 255, 255, 255, 136 },
                         children = {
-                            UI.Label {
-                                text = chapter.districtName or "South Bank Neon",
-                                fontSize = ThemeTokens.typography.caption,
-                                fontColor = ThemeTokens.colors.textSecondary,
+                            UI.Panel {
+                                width = "100%",
+                                flexDirection = "row",
+                                justifyContent = "space-between",
+                                alignItems = "center",
+                                children = {
+                                    UI.Panel {
+                                        gap = 6,
+                                        width = "70%",
+                                        children = {
+                                            UI.Label {
+                                                text = "跟着软乎乎的小店长，整理彩虹瓶子。",
+                                                fontSize = ThemeTokens.typography.title,
+                                                fontColor = colors.textPrimary,
+                                            },
+                                            UI.Label {
+                                                text = chapter.tagline or "帮小猫把彩虹瓶子整理整齐。",
+                                                fontSize = ThemeTokens.typography.body,
+                                                fontColor = colors.textSecondary,
+                                            },
+                                        },
+                                    },
+                                    UI.Panel {
+                                        width = 76,
+                                        height = 76,
+                                        backgroundImage = MASCOT_IMAGE,
+                                        backgroundFit = "contain",
+                                    },
+                                },
                             },
-                            UI.Label {
-                                text = chapter.tagline or "Bring the district lights back online.",
-                                fontSize = ThemeTokens.typography.title,
-                                fontColor = ThemeTokens.colors.textPrimary,
+                            UI.Panel {
+                                flexDirection = "row",
+                                flexWrap = "wrap",
+                                gap = 8,
+                                children = {
+                                    BuildMoodTag("萌猫主题", colors.coralFizz),
+                                    BuildMoodTag("轻松解压", colors.mangoGlow),
+                                    BuildMoodTag("单手游玩", colors.jadeMint),
+                                },
                             },
-                        },
-                    },
-                    UI.Label {
-                        text = "The reboot starts with a soft-neon district, one-thumb puzzle flow, and a structure built for lots of mechanics and lots of levels.",
-                        fontSize = ThemeTokens.typography.body,
-                        fontColor = ThemeTokens.colors.textSecondary,
-                    },
-                    UI.Panel {
-                        width = "100%",
-                        flexDirection = "row",
-                        justifyContent = "space-between",
-                        gap = 10,
-                        children = {
+                            UI.Panel {
+                                width = "100%",
+                                flexDirection = "row",
+                                flexWrap = "wrap",
+                                gap = 10,
+                                children = {
+                                    StatChip {
+                                        label = "当前章节",
+                                        value = chapter.name or "第一章",
+                                        valueColor = colors.mistCyan,
+                                        width = "31%",
+                                    },
+                                    StatChip {
+                                        label = "继续关卡",
+                                        value = currentLevelText,
+                                        valueColor = colors.coralFizz,
+                                        width = "31%",
+                                    },
+                                    StatChip {
+                                        label = "已解锁",
+                                        value = tostring(unlockedCount),
+                                        valueColor = colors.mangoGlow,
+                                        width = "31%",
+                                    },
+                                },
+                            },
                             SoftButton {
-                                text = "Continue",
-                                width = 132,
-                                height = 52,
+                                text = primaryButtonText,
+                                width = "100%",
+                                height = 62,
+                                fontSize = ThemeTokens.typography.section,
                                 accent = "mint",
                                 onClick = function()
-                                    if ctx.onContinue then
+                                    if hasPlayableLevel and ctx.onContinue then
                                         ctx.onContinue()
-                                    end
-                                end,
-                            },
-                            SoftButton {
-                                text = "Districts",
-                                width = 132,
-                                height = 52,
-                                accent = "warm",
-                                onClick = function()
-                                    if ctx.onOpenChapters then
+                                    elseif ctx.onOpenChapters then
                                         ctx.onOpenChapters()
                                     end
                                 end,
                             },
-                        },
-                    },
-                },
-            },
-            GlassCard {
-                flexGrow = 1,
-                gap = 12,
-                children = {
-                    UI.Label {
-                        text = "Design pillars",
-                        fontSize = ThemeTokens.typography.section,
-                        fontColor = ThemeTokens.colors.textPrimary,
-                    },
-                    UI.Label {
-                        text = "1. Fast portrait interactions.\n2. Rounded toy-like vessels.\n3. Soft cyber Chongqing atmosphere.\n4. Data-first level expansion.",
-                        fontSize = ThemeTokens.typography.body,
-                        fontColor = ThemeTokens.colors.textSecondary,
-                    },
-                    UI.Panel {
-                        width = "100%",
-                        flexDirection = "row",
-                        flexWrap = "wrap",
-                        gap = 10,
-                        children = {
-                            GlassCard {
-                                width = "48%",
-                                minHeight = 96,
-                                paddingTop = 14,
-                                paddingBottom = 14,
-                                backgroundColor = { 255, 255, 255, 14 },
-                                borderColor = { 106, 236, 255, 36 },
+                            UI.Panel {
+                                width = "100%",
+                                flexDirection = "row",
+                                justifyContent = "space-between",
+                                gap = 10,
                                 children = {
-                                    UI.Label {
-                                        text = "Session",
-                                        fontSize = ThemeTokens.typography.caption,
-                                        fontColor = ThemeTokens.colors.textSecondary,
+                                    SoftButton {
+                                        text = "选择章节",
+                                        width = 148,
+                                        height = 54,
+                                        accent = "warm",
+                                        onClick = function()
+                                            if ctx.onOpenChapters then
+                                                ctx.onOpenChapters()
+                                            end
+                                        end,
                                     },
-                                    UI.Label {
-                                        text = "1-3 min",
-                                        fontSize = ThemeTokens.typography.section,
-                                        fontColor = ThemeTokens.colors.mistCyan,
+                                    SoftButton {
+                                        text = "继续整理",
+                                        width = 148,
+                                        height = 54,
+                                        accent = "violet",
+                                        onClick = function()
+                                            if ctx.onContinue then
+                                                ctx.onContinue()
+                                            end
+                                        end,
                                     },
                                 },
                             },
-                            GlassCard {
-                                width = "48%",
-                                minHeight = 96,
-                                paddingTop = 14,
-                                paddingBottom = 14,
-                                backgroundColor = { 255, 255, 255, 14 },
-                                borderColor = { 255, 191, 84, 36 },
-                                children = {
-                                    UI.Label {
-                                        text = "Theme",
-                                        fontSize = ThemeTokens.typography.caption,
-                                        fontColor = ThemeTokens.colors.textSecondary,
-                                    },
-                                    UI.Label {
-                                        text = "Soft neon",
-                                        fontSize = ThemeTokens.typography.section,
-                                        fontColor = ThemeTokens.colors.mangoGlow,
-                                    },
-                                },
+                        },
+                    },
+                    GlassCard {
+                        gap = 8,
+                        backgroundColor = { 255, 252, 249, 212 },
+                        borderColor = { 255, 255, 255, 118 },
+                        children = {
+                            UI.Label {
+                                text = "上手很简单：先点起始瓶子，再点目标瓶子，相同颜色才能叠放。",
+                                fontSize = ThemeTokens.typography.body,
+                                fontColor = colors.textSecondary,
                             },
                         },
                     },
@@ -218,8 +265,8 @@ function HomeScreen.Create(ctx)
     return {
         root = root,
         HandleKey = function(key)
-            if key == KEY_RETURN and ctx.onOpenChapters then
-                ctx.onOpenChapters()
+            if key == KEY_RETURN and ctx.onContinue then
+                ctx.onContinue()
                 return true
             end
             return false

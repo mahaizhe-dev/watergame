@@ -24,7 +24,8 @@ local function GlassCard(props)
         alignItems = props.alignItems,
         children = props.children or {},
         boxShadow = props.boxShadow or {
-            { x = 0, y = 16, blur = 24, spread = 0, color = { 5, 8, 16, 80 } },
+            { x = 0, y = 14, blur = 28, spread = 0, color = { 162, 133, 129, 38 } },
+            { x = 0, y = 2, blur = 10, spread = 0, color = { 255, 255, 255, 38 } },
         },
     }
 end

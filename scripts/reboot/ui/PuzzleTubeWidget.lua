@@ -1,11 +1,12 @@
 local UI = require("urhox-libs/UI")
+local ThemeTokens = require("reboot.design.ThemeTokens")
 
 local PuzzleTubeWidget = UI.Widget:Extend("PuzzleTubeWidget")
 
 function PuzzleTubeWidget:Init(props)
     props = props or {}
-    props.width = props.width or 86
-    props.height = props.height or 188
+    props.width = props.width or 94
+    props.height = props.height or 196
     props.pointerEvents = "auto"
     UI.Widget.Init(self, props)
 
@@ -39,78 +40,106 @@ function PuzzleTubeWidget:Render(nvg)
     end
 
     local tube = self.getTube_ and self.getTube_(self.tubeIndex_) or nil
-    if not tube then
+    if type(tube) ~= "table" then
         return
     end
 
+    local colors = ThemeTokens.colors
     local isSelected = self.getSelectedIndex_ and self.getSelectedIndex_() == self.tubeIndex_
-    local shiftY = isSelected and -12 or 0
-    local shadowAlpha = self.hovered_ and 55 or 35
-
-    local outerX = layout.x + 16
-    local outerY = layout.y + 14 + shiftY
-    local outerW = layout.w - 32
-    local outerH = layout.h - 34
-
-    local innerX = outerX + 6
-    local innerY = outerY + 12
-    local innerW = outerW - 12
-    local innerH = outerH - 22
+    local shiftY = isSelected and -9 or 0
+    local bodyX = layout.x + 23
+    local bodyY = layout.y + 34 + shiftY
+    local bodyW = layout.w - 46
+    local bodyH = layout.h - 64
+    local neckW = bodyW * 0.42
+    local neckX = bodyX + (bodyW - neckW) * 0.5
+    local neckH = 20
+    local capW = bodyW * 0.64
+    local capX = bodyX + (bodyW - capW) * 0.5
+    local capH = 14
+    local innerX = bodyX + 7
+    local innerY = bodyY + 14
+    local innerW = bodyW - 14
+    local innerH = bodyH - 22
     local layerH = innerH / self.capacity_
+    local shadowAlpha = self.hovered_ and 52 or 34
 
     nvgBeginPath(nvg)
-    nvgEllipse(nvg, layout.x + layout.w * 0.5, layout.y + layout.h - 12 + shiftY, outerW * 0.64, 10)
-    local baseShadow = nvgRadialGradient(
+    nvgEllipse(nvg, layout.x + layout.w * 0.5, layout.y + layout.h - 12 + shiftY, bodyW * 0.62, 8)
+    local shadow = nvgRadialGradient(
         nvg,
         layout.x + layout.w * 0.5,
         layout.y + layout.h - 12 + shiftY,
         0,
-        outerW * 0.7,
-        nvgRGBA(10, 12, 20, shadowAlpha),
-        nvgRGBA(10, 12, 20, 0)
+        bodyW * 0.74,
+        nvgRGBA(colors.shadowMauve[1], colors.shadowMauve[2], colors.shadowMauve[3], shadowAlpha),
+        nvgRGBA(colors.shadowMauve[1], colors.shadowMauve[2], colors.shadowMauve[3], 0)
     )
-    nvgFillPaint(nvg, baseShadow)
+    nvgFillPaint(nvg, shadow)
     nvgFill(nvg)
-
-    nvgBeginPath(nvg)
-    nvgRoundedRect(nvg, outerX, outerY, outerW, outerH, 26)
-    nvgFillColor(nvg, nvgRGBA(236, 244, 255, 18))
-    nvgFill(nvg)
-
-    nvgBeginPath(nvg)
-    nvgRoundedRect(nvg, outerX, outerY, outerW, outerH, 26)
-    if isSelected then
-        nvgStrokeColor(nvg, nvgRGBA(106, 236, 255, 220))
-        nvgStrokeWidth(nvg, 2.2)
-    else
-        nvgStrokeColor(nvg, nvgRGBA(238, 245, 255, 82))
-        nvgStrokeWidth(nvg, 1.5)
-    end
-    nvgStroke(nvg)
 
     if isSelected then
         nvgBeginPath(nvg)
-        nvgRoundedRect(nvg, outerX - 3, outerY - 3, outerW + 6, outerH + 6, 28)
-        nvgStrokeColor(nvg, nvgRGBA(106, 236, 255, 60))
+        nvgRoundedRect(nvg, bodyX - 4, bodyY - 4, bodyW + 8, bodyH + 8, 26)
+        nvgStrokeColor(nvg, nvgRGBA(colors.mangoGlow[1], colors.mangoGlow[2], colors.mangoGlow[3], 90))
         nvgStrokeWidth(nvg, 6)
         nvgStroke(nvg)
     end
 
     nvgBeginPath(nvg)
-    nvgRoundedRect(nvg, innerX, innerY, innerW, innerH, 20)
-    nvgFillColor(nvg, nvgRGBA(255, 255, 255, 10))
+    nvgRoundedRect(nvg, capX, bodyY - capH + 4, capW, capH, 8)
+    nvgFillColor(nvg, nvgRGBA(255, 240, 222, 230))
+    nvgFill(nvg)
+
+    nvgBeginPath(nvg)
+    nvgRoundedRect(nvg, neckX, bodyY - 4, neckW, neckH, 11)
+    nvgFillColor(nvg, nvgRGBA(255, 246, 236, 216))
+    nvgFill(nvg)
+
+    nvgBeginPath(nvg)
+    nvgRoundedRect(nvg, bodyX, bodyY + 12, bodyW, bodyH, 24)
+    local bodyFill = nvgLinearGradient(
+        nvg,
+        bodyX,
+        bodyY + 12,
+        bodyX,
+        bodyY + bodyH + 12,
+        nvgRGBA(255, 253, 251, 224),
+        nvgRGBA(241, 247, 251, 198)
+    )
+    nvgFillPaint(nvg, bodyFill)
+    nvgFill(nvg)
+
+    nvgBeginPath(nvg)
+    nvgRoundedRect(nvg, bodyX, bodyY + 12, bodyW, bodyH, 24)
+    if isSelected then
+        nvgStrokeColor(nvg, nvgRGBA(colors.coralFizz[1], colors.coralFizz[2], colors.coralFizz[3], 228))
+        nvgStrokeWidth(nvg, 2.2)
+    else
+        nvgStrokeColor(nvg, nvgRGBA(255, 255, 255, 170))
+        nvgStrokeWidth(nvg, 1.5)
+    end
+    nvgStroke(nvg)
+
+    nvgBeginPath(nvg)
+    nvgRoundedRect(nvg, bodyX + 6, bodyY + 22, bodyW - 12, 10, 5)
+    nvgFillColor(nvg, nvgRGBA(colors.mangoGlow[1], colors.mangoGlow[2], colors.mangoGlow[3], 108))
+    nvgFill(nvg)
+
+    nvgBeginPath(nvg)
+    nvgRoundedRect(nvg, innerX, innerY + 14, innerW, innerH, 18)
+    nvgFillColor(nvg, nvgRGBA(255, 255, 255, 42))
     nvgFill(nvg)
 
     nvgSave(nvg)
-    nvgScissor(nvg, innerX, innerY, innerW, innerH)
-
+    nvgScissor(nvg, innerX, innerY + 14, innerW, innerH)
     for layerIndex = 1, #tube do
         local color = self.palette_[tube[layerIndex]] or { 255, 255, 255, 255 }
-        local top = innerY + innerH - layerIndex * layerH
-        local height = layerH + 1
+        local top = innerY + 14 + innerH - layerIndex * layerH
+        local height = layerH + 2
 
         nvgBeginPath(nvg)
-        nvgRoundedRect(nvg, innerX + 2, top, innerW - 4, height + 4, 12)
+        nvgRoundedRect(nvg, innerX + 2, top, innerW - 4, height + 4, 10)
         local fill = nvgLinearGradient(
             nvg,
             innerX,
@@ -118,49 +147,37 @@ function PuzzleTubeWidget:Render(nvg)
             innerX,
             top + height,
             nvgRGBA(
-                math.min(color[1] + 18, 255),
-                math.min(color[2] + 18, 255),
-                math.min(color[3] + 18, 255),
-                240
+                math.min(color[1] + 20, 255),
+                math.min(color[2] + 20, 255),
+                math.min(color[3] + 20, 255),
+                244
             ),
             nvgRGBA(
-                math.max(color[1] - 18, 0),
-                math.max(color[2] - 18, 0),
-                math.max(color[3] - 18, 0),
-                250
+                math.max(color[1] - 10, 0),
+                math.max(color[2] - 10, 0),
+                math.max(color[3] - 10, 0),
+                248
             )
         )
         nvgFillPaint(nvg, fill)
         nvgFill(nvg)
 
         nvgBeginPath(nvg)
-        nvgRoundedRect(nvg, innerX + 6, top + 5, math.max(innerW * 0.18, 8), math.max(height - 10, 6), 6)
-        nvgFillColor(nvg, nvgRGBA(255, 255, 255, 34))
+        nvgRoundedRect(nvg, innerX + 7, top + 5, math.max(innerW * 0.16, 8), math.max(height - 10, 6), 6)
+        nvgFillColor(nvg, nvgRGBA(255, 255, 255, 44))
         nvgFill(nvg)
     end
-
     nvgRestore(nvg)
 
     nvgBeginPath(nvg)
-    nvgRoundedRect(nvg, outerX + 9, outerY + 12, 7, outerH - 30, 4)
-    nvgFillColor(nvg, nvgRGBA(255, 255, 255, 28))
+    nvgRoundedRect(nvg, bodyX + 10, bodyY + 26, 7, bodyH - 18, 4)
+    nvgFillColor(nvg, nvgRGBA(255, 255, 255, 48))
     nvgFill(nvg)
 
     nvgBeginPath(nvg)
-    nvgRoundedRect(nvg, outerX + outerW * 0.5 - 12, outerY - 6, 24, 10, 5)
-    nvgFillColor(nvg, nvgRGBA(245, 248, 255, 90))
+    nvgRoundedRect(nvg, bodyX + bodyW * 0.55, bodyY + 28, 6, bodyH * 0.36, 3)
+    nvgFillColor(nvg, nvgRGBA(255, 255, 255, 26))
     nvgFill(nvg)
-
-    nvgBeginPath(nvg)
-    nvgCircle(nvg, layout.x + layout.w * 0.5, layout.y + layout.h - 14 + shiftY, 14)
-    nvgFillColor(nvg, nvgRGBA(255, 255, 255, 24))
-    nvgFill(nvg)
-
-    nvgBeginPath(nvg)
-    nvgCircle(nvg, layout.x + layout.w * 0.5, layout.y + layout.h - 14 + shiftY, 14)
-    nvgStrokeColor(nvg, nvgRGBA(255, 255, 255, 44))
-    nvgStrokeWidth(nvg, 1)
-    nvgStroke(nvg)
 end
 
 return PuzzleTubeWidget

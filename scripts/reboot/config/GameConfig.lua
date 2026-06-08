@@ -1,7 +1,7 @@
 local GameConfig = {
     app = {
-        codeName = "CyberChongqingPour",
-        displayName = "Cyber Chongqing Water Sort",
+        codeName = "CatPourHouse",
+        displayName = "猫咪倒水屋",
         orientation = "portrait",
         targetSessionSeconds = { min = 60, max = 180 },
     },
