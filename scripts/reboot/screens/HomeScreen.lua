@@ -6,8 +6,8 @@ local GlassCard = require("reboot.ui.GlassCard")
 
 local HomeScreen = {}
 
-local HERO_IMAGE = "Textures/ui/cat-home-hero-v1.png"
-local MASCOT_IMAGE = "Textures/ui/cat-mascot-badge-v1.png"
+local HERO_IMAGE = "assets/images/ui/cat-home-hero-v1.jpg"
+local MASCOT_IMAGE = "assets/images/ui/cat-mascot-badge-v1.jpg"
 
 local function BuildMoodTag(text, color)
     return UI.Panel {

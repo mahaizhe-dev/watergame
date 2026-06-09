@@ -7,7 +7,7 @@ local GlassCard = require("reboot.ui.GlassCard")
 
 local LevelSelectScreen = {}
 
-local MASCOT_IMAGE = "Textures/ui/cat-mascot-badge-v1.png"
+local MASCOT_IMAGE = "assets/images/ui/cat-mascot-badge-v1.jpg"
 local PAGE_SIZE = 8
 
 local function BuildLevelCard(index, level, isUnlocked, isCurrent, onSelect)

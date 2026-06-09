@@ -7,7 +7,7 @@ local GlassCard = require("reboot.ui.GlassCard")
 
 local ChapterSelectScreen = {}
 
-local MASCOT_IMAGE = "Textures/ui/cat-mascot-badge-v1.png"
+local MASCOT_IMAGE = "assets/images/ui/cat-mascot-badge-v1.jpg"
 
 local function clearedCount(progress, chapterIndex)
     if not progress or type(progress.clearedLevelsByChapter) ~= "table" then
