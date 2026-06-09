@@ -2,22 +2,27 @@ local MechanicsCatalog = {
     vessels = {
         classic = {
             id = "classic",
-            summary = "Standard vessel with normal sort rules.",
+            summary = "标准猫咪瓶，使用经典倒水规则。",
             tutorialWeight = 0,
         },
         locked = {
             id = "locked",
-            summary = "Requires an unlock condition before pouring.",
+            summary = "锁瓶，需要先完成指定数量的整瓶才会打开。",
             tutorialWeight = 2,
         },
-        oneWay = {
-            id = "one_way",
-            summary = "Can pour out only in one direction.",
+        oneWayOut = {
+            id = "one_way_out",
+            summary = "箭头瓶只能倒出，不能作为落点。",
+            tutorialWeight = 3,
+        },
+        oneWayIn = {
+            id = "one_way_in",
+            summary = "箭头瓶只能接水，不能作为起始瓶。",
             tutorialWeight = 3,
         },
         cracked = {
             id = "cracked",
-            summary = "Punishes overuse or specific liquid types.",
+            summary = "裂纹瓶作为起始瓶的次数有限，用完就会报废。",
             tutorialWeight = 4,
         },
     },
@@ -25,46 +30,26 @@ local MechanicsCatalog = {
     liquids = {
         normal = {
             id = "normal",
-            summary = "Classic liquid segment.",
+            summary = "普通液体层，当前战役只使用标准液体。",
             tutorialWeight = 0,
-        },
-        heated = {
-            id = "heated",
-            summary = "Changes behavior when paired with temperature triggers.",
-            tutorialWeight = 3,
-        },
-        sludge = {
-            id = "sludge",
-            summary = "Sticky layer that blocks free movement.",
-            tutorialWeight = 4,
-        },
-        catalyst = {
-            id = "catalyst",
-            summary = "Activates devices or transforms adjacent rules.",
-            tutorialWeight = 5,
         },
     },
 
     boardRules = {
         standard = {
             id = "standard",
-            summary = "No board modifiers.",
+            summary = "无棋盘机关，纯经典倒水布局。",
             tutorialWeight = 0,
         },
         conveyor = {
             id = "conveyor",
-            summary = "Repositions vessels after a move or phase.",
+            summary = "传送带会在每步后移动整排瓶子的位置。",
             tutorialWeight = 4,
         },
         elevator = {
             id = "elevator",
-            summary = "Changes active lanes and move access.",
+            summary = "升降梯会切换当前可作为起始瓶的轨道。",
             tutorialWeight = 4,
-        },
-        contamination = {
-            id = "contamination",
-            summary = "Adds cleanup pressure to the puzzle.",
-            tutorialWeight = 5,
         },
     },
 }

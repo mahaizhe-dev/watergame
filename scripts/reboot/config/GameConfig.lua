@@ -9,13 +9,14 @@ local GameConfig = {
     board = {
         defaultCapacity = 4,
         minTubeCount = 5,
-        maxTubeCount = 10,
+        maxTubeCount = 12,
         minTouchSize = 88,
         topHudHeight = 120,
         bottomBarHeight = 164,
     },
 
     progression = {
+        chapterCount = 8,
         starsPerLevel = 3,
         defaultHintCount = 3,
         chapterSize = 20,

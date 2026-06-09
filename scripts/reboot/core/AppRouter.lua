@@ -1,6 +1,6 @@
 local UI = require("urhox-libs/UI")
 local AppBlueprint = require("reboot.core.AppBlueprint")
-local StarterLevels = require("reboot.data.StarterLevels")
+local CampaignData = require("reboot.data.CampaignData")
 local HomeScreen = require("reboot.screens.HomeScreen")
 local ChapterSelectScreen = require("reboot.screens.ChapterSelectScreen")
 local LevelSelectScreen = require("reboot.screens.LevelSelectScreen")
@@ -11,11 +11,24 @@ local SoftButton = require("reboot.ui.SoftButton")
 
 local AppRouter = {}
 
-local function clampLevelIndex(levels, index)
-    if #levels == 0 then
-        return 1
+local function clamp(value, minimum, maximum)
+    if maximum < minimum then
+        return minimum
     end
-    return math.max(1, math.min(#levels, index or 1))
+    return math.max(minimum, math.min(maximum, value or minimum))
+end
+
+local function chapterLevels(chapters, chapterIndex)
+    local chapter = chapters[chapterIndex] or {}
+    return chapter.levels or {}
+end
+
+local function totalLevelCount(chapters)
+    local total = 0
+    for _, chapter in ipairs(chapters) do
+        total = total + #(chapter.levels or {})
+    end
+    return total
 end
 
 function AppRouter.Create()
@@ -25,34 +38,55 @@ function AppRouter.Create()
         height = "100%",
     }
 
-    local chapter = StarterLevels.chapter or {}
-    local levels = StarterLevels.levels or {}
-    local initialUnlocked = #levels == 0 and 0 or 1
-
-    local progress = {
-        currentLevelIndex = 1,
-        unlockedLevelCount = initialUnlocked,
-    }
+    local chapters = CampaignData.chapters or {}
+    local chapterCount = #chapters
+    local totalLevels = totalLevelCount(chapters)
     local currentRoute = nil
     local currentScreen = nil
     local navigate
 
-    local function markLevelFocused(levelIndex)
-        progress.currentLevelIndex = clampLevelIndex(levels, levelIndex)
+    local progress = {
+        currentChapterIndex = chapterCount > 0 and 1 or 0,
+        currentLevelIndex = 1,
+        unlockedChapterCount = chapterCount > 0 and 1 or 0,
+        unlockedLevelsByChapter = {},
+        clearedLevelsByChapter = {},
+    }
+
+    for chapterIndex = 1, chapterCount do
+        progress.unlockedLevelsByChapter[chapterIndex] = chapterIndex == 1 and 1 or 0
+        progress.clearedLevelsByChapter[chapterIndex] = 0
     end
 
-    local function markLevelCleared(levelIndex)
-        if #levels == 0 then
-            progress.currentLevelIndex = 1
-            progress.unlockedLevelCount = 0
-            return
+    local function clampChapterIndex(chapterIndex)
+        if chapterCount == 0 then
+            return 1
         end
+        return clamp(chapterIndex, 1, chapterCount)
+    end
 
-        progress.currentLevelIndex = clampLevelIndex(levels, levelIndex)
-        progress.unlockedLevelCount = math.min(
-            #levels,
-            math.max(progress.unlockedLevelCount, levelIndex + 1)
-        )
+    local function clampLevelIndex(chapterIndex, levelIndex)
+        local levels = chapterLevels(chapters, chapterIndex)
+        if #levels == 0 then
+            return 1
+        end
+        return clamp(levelIndex, 1, #levels)
+    end
+
+    local function getCurrentChapter()
+        return chapters[clampChapterIndex(progress.currentChapterIndex)] or {}
+    end
+
+    local function getCurrentLevels()
+        return chapterLevels(chapters, clampChapterIndex(progress.currentChapterIndex))
+    end
+
+    local function countClearedLevels()
+        local total = 0
+        for chapterIndex = 1, chapterCount do
+            total = total + (progress.clearedLevelsByChapter[chapterIndex] or 0)
+        end
+        return total
     end
 
     local function mountScreen(screen)
@@ -160,22 +194,80 @@ function AppRouter.Create()
         )
     end
 
+    local function markLevelFocused(chapterIndex, levelIndex)
+        progress.currentChapterIndex = clampChapterIndex(chapterIndex)
+        progress.currentLevelIndex = clampLevelIndex(progress.currentChapterIndex, levelIndex)
+    end
+
+    local function ensureUnlockEntry(chapterIndex)
+        if progress.unlockedLevelsByChapter[chapterIndex] == nil then
+            progress.unlockedLevelsByChapter[chapterIndex] = 0
+        end
+        if progress.clearedLevelsByChapter[chapterIndex] == nil then
+            progress.clearedLevelsByChapter[chapterIndex] = 0
+        end
+    end
+
+    local function markLevelCleared(chapterIndex, levelIndex)
+        chapterIndex = clampChapterIndex(chapterIndex)
+        levelIndex = clampLevelIndex(chapterIndex, levelIndex)
+        local levels = chapterLevels(chapters, chapterIndex)
+
+        ensureUnlockEntry(chapterIndex)
+        progress.clearedLevelsByChapter[chapterIndex] = math.max(progress.clearedLevelsByChapter[chapterIndex], levelIndex)
+        progress.unlockedLevelsByChapter[chapterIndex] = math.max(
+            progress.unlockedLevelsByChapter[chapterIndex],
+            math.min(#levels, levelIndex + 1)
+        )
+
+        if levelIndex >= #levels and chapterIndex < chapterCount then
+            ensureUnlockEntry(chapterIndex + 1)
+            progress.unlockedChapterCount = math.max(progress.unlockedChapterCount, chapterIndex + 1)
+            progress.unlockedLevelsByChapter[chapterIndex + 1] = math.max(
+                progress.unlockedLevelsByChapter[chapterIndex + 1],
+                1
+            )
+        else
+            progress.unlockedChapterCount = math.max(progress.unlockedChapterCount, chapterIndex)
+        end
+
+        progress.currentChapterIndex = chapterIndex
+        progress.currentLevelIndex = levelIndex
+    end
+
+    local function currentContinueLabel()
+        if chapterCount == 0 then
+            return "查看章节"
+        end
+        local chapter = getCurrentChapter()
+        return string.format(
+            "继续第 %02d 章·%s",
+            progress.currentChapterIndex,
+            chapter.name or "猫咪乐园"
+        )
+    end
+
     navigate = function(route, params)
         params = params or {}
         currentRoute = route
 
         if route == AppBlueprint.routes.home then
+            local chapter = getCurrentChapter()
             local screen = safeCreateScreen("首页", HomeScreen, {
                 chapter = chapter,
                 progress = progress,
+                totalLevels = totalLevels,
+                totalCleared = countClearedLevels(),
+                currentContinueLabel = currentContinueLabel(),
                 onContinue = function()
-                    if #levels == 0 then
+                    if chapterCount == 0 then
                         navigate(AppBlueprint.routes.chapterSelect, {})
-                    else
-                        navigate(AppBlueprint.routes.puzzle, {
-                            levelIndex = progress.currentLevelIndex,
-                        })
+                        return
                     end
+                    navigate(AppBlueprint.routes.puzzle, {
+                        chapterIndex = progress.currentChapterIndex,
+                        levelIndex = progress.currentLevelIndex,
+                    })
                 end,
                 onOpenChapters = function()
                     navigate(AppBlueprint.routes.chapterSelect, {})
@@ -187,14 +279,17 @@ function AppRouter.Create()
 
         if route == AppBlueprint.routes.chapterSelect then
             local screen = safeCreateScreen("章节选择", ChapterSelectScreen, {
-                chapter = chapter,
-                levels = levels,
+                chapters = chapters,
                 progress = progress,
+                totalLevels = totalLevels,
+                totalCleared = countClearedLevels(),
                 onBack = function()
                     navigate(AppBlueprint.routes.home, {})
                 end,
-                onSelectChapter = function()
-                    navigate(AppBlueprint.routes.levelSelect, {})
+                onSelectChapter = function(chapterIndex)
+                    navigate(AppBlueprint.routes.levelSelect, {
+                        chapterIndex = clampChapterIndex(chapterIndex),
+                    })
                 end,
             }, AppBlueprint.routes.chapterSelect, params)
             mountScreen(screen)
@@ -202,15 +297,19 @@ function AppRouter.Create()
         end
 
         if route == AppBlueprint.routes.levelSelect then
+            local chapterIndex = clampChapterIndex(params.chapterIndex or progress.currentChapterIndex)
+            local chapter = chapters[chapterIndex] or {}
             local screen = safeCreateScreen("关卡选择", LevelSelectScreen, {
+                chapterIndex = chapterIndex,
                 chapter = chapter,
-                levels = levels,
+                levels = chapter.levels or {},
                 progress = progress,
                 onBack = function()
                     navigate(AppBlueprint.routes.chapterSelect, {})
                 end,
                 onSelectLevel = function(levelIndex)
                     navigate(AppBlueprint.routes.puzzle, {
+                        chapterIndex = chapterIndex,
                         levelIndex = levelIndex,
                     })
                 end,
@@ -220,25 +319,44 @@ function AppRouter.Create()
         end
 
         if route == AppBlueprint.routes.puzzle then
+            local chapterIndex = clampChapterIndex(params.chapterIndex or progress.currentChapterIndex)
+            local levels = chapterLevels(chapters, chapterIndex)
+            local chapter = chapters[chapterIndex] or {}
+            local levelIndex = clampLevelIndex(chapterIndex, params.levelIndex or progress.currentLevelIndex)
+
             local screen = safeCreateScreen("倒水玩法", PuzzleScreen, {
+                chapterIndex = chapterIndex,
+                totalChapters = chapterCount,
                 chapter = chapter,
                 levels = levels,
                 progress = progress,
-                levelIndex = clampLevelIndex(levels, params.levelIndex or progress.currentLevelIndex),
+                levelIndex = levelIndex,
                 onBack = function()
-                    navigate(AppBlueprint.routes.levelSelect, {})
+                    navigate(AppBlueprint.routes.levelSelect, {
+                        chapterIndex = chapterIndex,
+                    })
                 end,
                 onOpenHome = function()
                     navigate(AppBlueprint.routes.home, {})
                 end,
                 onOpenLevels = function()
-                    navigate(AppBlueprint.routes.levelSelect, {})
+                    navigate(AppBlueprint.routes.levelSelect, {
+                        chapterIndex = chapterIndex,
+                    })
                 end,
-                onLevelFocus = function(levelIndex)
-                    markLevelFocused(levelIndex)
+                onLevelFocus = function(focusedChapterIndex, focusedLevelIndex)
+                    markLevelFocused(focusedChapterIndex, focusedLevelIndex)
                 end,
-                onLevelClear = function(levelIndex)
-                    markLevelCleared(levelIndex)
+                onLevelClear = function(clearedChapterIndex, clearedLevelIndex)
+                    markLevelCleared(clearedChapterIndex, clearedLevelIndex)
+                end,
+                onAutoAdvance = function(nextChapterIndex, nextLevelIndex)
+                    progress.currentChapterIndex = clampChapterIndex(nextChapterIndex)
+                    progress.currentLevelIndex = clampLevelIndex(progress.currentChapterIndex, nextLevelIndex)
+                    navigate(AppBlueprint.routes.puzzle, {
+                        chapterIndex = progress.currentChapterIndex,
+                        levelIndex = progress.currentLevelIndex,
+                    })
                 end,
             }, AppBlueprint.routes.puzzle, params)
             mountScreen(screen)
@@ -273,6 +391,16 @@ function AppRouter.Create()
 
         if key == KEY_ESCAPE and currentRoute ~= AppBlueprint.routes.home then
             navigate(AppBlueprint.routes.home, {})
+        end
+    end
+
+    function router.HandleUpdate(dt)
+        if currentScreen and currentScreen.Update then
+            local ok, err = pcall(currentScreen.Update, dt)
+            if not ok then
+                print(string.format("[AppRouter] Update failed on route %s: %s", tostring(currentRoute), tostring(err)))
+                navigate(AppBlueprint.routes.home, {})
+            end
         end
     end
 

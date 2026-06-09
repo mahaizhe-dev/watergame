@@ -6,8 +6,8 @@ local GlassCard = require("reboot.ui.GlassCard")
 
 local HomeScreen = {}
 
-local HERO_IMAGE = "assets/images/ui/cat-home-hero-v1.jpg"
-local MASCOT_IMAGE = "assets/images/ui/cat-mascot-badge-v1.jpg"
+local HERO_IMAGE = "Textures/ui/cat-home-hero-v1.png"
+local MASCOT_IMAGE = "Textures/ui/cat-mascot-badge-v1.png"
 
 local function BuildMoodTag(text, color)
     return UI.Panel {
@@ -34,11 +34,18 @@ function HomeScreen.Create(ctx)
     local chapter = ctx.chapter or {}
     local progress = ctx.progress or {}
     local colors = ThemeTokens.colors
-    local unlockedCount = progress.unlockedLevelCount or 0
-    local hasPlayableLevel = unlockedCount > 0
-    local currentLevel = hasPlayableLevel and math.max(progress.currentLevelIndex or 1, 1) or 0
+    local totalLevels = tonumber(ctx.totalLevels) or 0
+    local totalCleared = tonumber(ctx.totalCleared) or 0
+    local chapterIndex = tonumber(progress.currentChapterIndex) or 0
+    local currentLevel = tonumber(progress.currentLevelIndex) or 0
+    local unlockedCount = progress.unlockedLevelsByChapter
+        and progress.unlockedLevelsByChapter[chapterIndex]
+        or 0
+    local hasPlayableLevel = chapterIndex > 0 and currentLevel > 0 and unlockedCount > 0
     local currentLevelText = currentLevel == 0 and "--" or string.format("%02d", currentLevel)
-    local primaryButtonText = currentLevel == 0 and "查看章节" or string.format("开始第 %s 关", currentLevelText)
+    local currentChapterText = chapterIndex == 0 and "--" or string.format("%02d", chapterIndex)
+    local currentContinueLabel = ctx.currentContinueLabel
+        or (hasPlayableLevel and string.format("继续第 %s 章", currentChapterText) or "查看章节")
 
     local root = UI.Panel {
         width = "100%",
@@ -100,7 +107,7 @@ function HomeScreen.Create(ctx)
                 left = 14,
                 gap = 8,
                 children = {
-                    BuildMoodTag("萌系休闲新游", colors.coralFizz),
+                    BuildMoodTag("8章160关", colors.coralFizz),
                     UI.Panel {
                         paddingLeft = 14,
                         paddingRight = 14,
@@ -144,7 +151,7 @@ function HomeScreen.Create(ctx)
                                         width = "70%",
                                         children = {
                                             UI.Label {
-                                                text = "跟着软乎乎的小店长，整理彩虹瓶子。",
+                                                text = "跟着软乎乎的小店长，把 8 座猫咪乐园全部整理亮灯。",
                                                 fontSize = ThemeTokens.typography.title,
                                                 fontColor = colors.textPrimary,
                                             },
@@ -169,8 +176,8 @@ function HomeScreen.Create(ctx)
                                 gap = 8,
                                 children = {
                                     BuildMoodTag("萌猫主题", colors.coralFizz),
-                                    BuildMoodTag("轻松解压", colors.mangoGlow),
-                                    BuildMoodTag("单手游玩", colors.jadeMint),
+                                    BuildMoodTag("章节战役", colors.mangoGlow),
+                                    BuildMoodTag("12瓶终章", colors.jadeMint),
                                 },
                             },
                             UI.Panel {
@@ -181,7 +188,7 @@ function HomeScreen.Create(ctx)
                                 children = {
                                     StatChip {
                                         label = "当前章节",
-                                        value = chapter.name or "第一章",
+                                        value = chapterIndex == 0 and "--" or string.format("%s章", currentChapterText),
                                         valueColor = colors.mistCyan,
                                         width = "31%",
                                     },
@@ -192,15 +199,15 @@ function HomeScreen.Create(ctx)
                                         width = "31%",
                                     },
                                     StatChip {
-                                        label = "已解锁",
-                                        value = tostring(unlockedCount),
+                                        label = "已通关",
+                                        value = string.format("%d/%d", totalCleared, totalLevels),
                                         valueColor = colors.mangoGlow,
                                         width = "31%",
                                     },
                                 },
                             },
                             SoftButton {
-                                text = primaryButtonText,
+                                text = currentContinueLabel,
                                 width = "100%",
                                 height = 62,
                                 fontSize = ThemeTokens.typography.section,
@@ -251,7 +258,9 @@ function HomeScreen.Create(ctx)
                         borderColor = { 255, 255, 255, 118 },
                         children = {
                             UI.Label {
-                                text = "上手很简单：先点起始瓶子，再点目标瓶子，相同颜色才能叠放。",
+                                text = chapter.mechanicFocus
+                                    and string.format("当前章节主打：%s。先点起始瓶，再点目标瓶，相同颜色才能叠放。", chapter.mechanicFocus)
+                                    or "先点起始瓶，再点目标瓶，相同颜色才能叠放。",
                                 fontSize = ThemeTokens.typography.body,
                                 fontColor = colors.textSecondary,
                             },

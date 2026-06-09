@@ -12,11 +12,14 @@ local function StatChip(props)
         paddingTop = 10,
         paddingBottom = 10,
         gap = 2,
-        backgroundColor = props.backgroundColor or { 255, 255, 255, 190 },
+        backgroundColor = props.backgroundColor or { 255, 255, 255, 202 },
         borderRadius = ThemeTokens.radius.chip,
         borderWidth = 1,
-        borderColor = props.borderColor or { 255, 255, 255, 150 },
+        borderColor = props.borderColor or { 255, 255, 255, 156 },
         alignItems = props.alignItems or "center",
+        boxShadow = props.boxShadow or {
+            { x = 0, y = 5, blur = 12, spread = 0, color = { 133, 94, 112, 20 } },
+        },
         children = {
             UI.Label {
                 text = props.label or "标签",

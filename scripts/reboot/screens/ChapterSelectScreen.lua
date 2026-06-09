@@ -7,28 +7,93 @@ local GlassCard = require("reboot.ui.GlassCard")
 
 local ChapterSelectScreen = {}
 
-local MASCOT_IMAGE = "assets/images/ui/cat-mascot-badge-v1.jpg"
+local MASCOT_IMAGE = "Textures/ui/cat-mascot-badge-v1.png"
 
-local function BuildLockedCard(title, note, accent)
-    return GlassCard {
+local function clearedCount(progress, chapterIndex)
+    if not progress or type(progress.clearedLevelsByChapter) ~= "table" then
+        return 0
+    end
+    return tonumber(progress.clearedLevelsByChapter[chapterIndex]) or 0
+end
+
+local function unlockedChapterCount(progress)
+    return tonumber(progress and progress.unlockedChapterCount) or 0
+end
+
+local function BuildChapterCard(chapterIndex, chapter, progress, onSelect)
+    chapter = chapter or {}
+    local colors = ThemeTokens.colors
+    local unlocked = chapterIndex <= unlockedChapterCount(progress)
+    local cleared = clearedCount(progress, chapterIndex)
+    local totalLevels = #(chapter.levels or {})
+    local accent = unlocked and colors.mistCyan or colors.textMuted
+
+    return UI.Panel {
+        width = "48%",
+        minHeight = 166,
+        paddingLeft = 14,
+        paddingRight = 14,
+        paddingTop = 14,
+        paddingBottom = 14,
         gap = 8,
-        backgroundColor = { 255, 255, 255, 160 },
-        borderColor = { accent[1], accent[2], accent[3], 48 },
+        backgroundColor = unlocked and { 255, 250, 246, 224 } or { 255, 255, 255, 142 },
+        borderRadius = ThemeTokens.radius.card,
+        borderWidth = 1,
+        borderColor = unlocked and { 255, 255, 255, 138 } or { 255, 255, 255, 96 },
+        boxShadow = unlocked and {
+            { x = 0, y = 12, blur = 18, spread = 0, color = { 152, 114, 100, 34 } },
+        } or nil,
+        pointerEvents = unlocked and "auto" or "none",
+        onPointerDown = function(event, widget)
+            if unlocked then
+                widget.scale = 0.97
+            end
+        end,
+        onPointerUp = function(event, widget)
+            widget.scale = 1.0
+            if unlocked and onSelect then
+                onSelect(chapterIndex)
+            end
+        end,
         children = {
+            UI.Panel {
+                width = "100%",
+                flexDirection = "row",
+                justifyContent = "space-between",
+                children = {
+                    UI.Label {
+                        text = string.format("第 %02d 章", chapterIndex),
+                        fontSize = ThemeTokens.typography.caption,
+                        fontColor = colors.textSecondary,
+                    },
+                    UI.Label {
+                        text = unlocked and string.format("%d/20", cleared) or "未解锁",
+                        fontSize = ThemeTokens.typography.caption,
+                        fontColor = accent,
+                    },
+                },
+            },
             UI.Label {
-                text = title,
+                text = chapter.name or "未命名章节",
                 fontSize = ThemeTokens.typography.section,
-                fontColor = ThemeTokens.colors.textPrimary,
+                fontColor = unlocked and colors.textPrimary or colors.textMuted,
             },
             UI.Label {
-                text = note,
-                fontSize = ThemeTokens.typography.body,
-                fontColor = ThemeTokens.colors.textSecondary,
-            },
-            UI.Label {
-                text = "敬请期待",
+                text = chapter.districtName or "猫咪城区",
                 fontSize = ThemeTokens.typography.caption,
+                fontColor = colors.textSecondary,
+            },
+            UI.Label {
+                text = chapter.mechanicFocus or "经典倒水",
+                fontSize = ThemeTokens.typography.body,
                 fontColor = accent,
+            },
+            UI.Label {
+                text = unlocked
+                    and string.format("本章共 %d 关，主打 %s。", totalLevels, chapter.mechanicFocus or "经典规则")
+                    or "先完成前面的乐园，猫咪才会带你过来。",
+                fontSize = ThemeTokens.typography.caption,
+                fontColor = unlocked and colors.textSecondary or colors.textMuted,
             },
         },
     }
@@ -36,11 +101,20 @@ end
 
 function ChapterSelectScreen.Create(ctx)
     ctx = ctx or {}
-    local chapter = ctx.chapter or {}
+    local chapters = ctx.chapters or {}
     local progress = ctx.progress or {}
     local colors = ThemeTokens.colors
-    local totalLevels = #(ctx.levels or {})
-    local unlockedCount = totalLevels == 0 and 0 or math.max(1, math.min(progress.unlockedLevelCount or 1, totalLevels))
+    local totalCleared = tonumber(ctx.totalCleared) or 0
+    local totalLevels = tonumber(ctx.totalLevels) or 0
+
+    local chapterCards = {}
+    for chapterIndex, chapter in ipairs(chapters) do
+        table.insert(chapterCards, BuildChapterCard(chapterIndex, chapter, progress, function(selectedChapterIndex)
+            if ctx.onSelectChapter then
+                ctx.onSelectChapter(selectedChapterIndex)
+            end
+        end))
+    end
 
     local root = UI.Panel {
         width = "100%",
@@ -67,7 +141,7 @@ function ChapterSelectScreen.Create(ctx)
                                 fontColor = colors.textPrimary,
                             },
                             UI.Label {
-                                text = "挑一片猫咪乐园，把彩虹瓶子整理得漂漂亮亮。",
+                                text = "8 座猫咪乐园全部已经排进来了，挑一章继续整理彩虹瓶。",
                                 fontSize = ThemeTokens.typography.body,
                                 fontColor = colors.textSecondary,
                             },
@@ -91,15 +165,15 @@ function ChapterSelectScreen.Create(ctx)
                         gap = 10,
                         children = {
                             StatChip {
-                                label = "当前乐园",
-                                value = chapter.name or "第一章",
+                                label = "已解锁章节",
+                                value = string.format("%d / %d", unlockedChapterCount(progress), #chapters),
                                 valueColor = colors.mistCyan,
                                 width = "48%",
                                 alignItems = "flex-start",
                             },
                             StatChip {
-                                label = "已解锁关卡",
-                                value = string.format("%d / %d", unlockedCount, totalLevels),
+                                label = "总进度",
+                                value = string.format("%d / %d", totalCleared, totalLevels),
                                 valueColor = colors.coralFizz,
                                 width = "48%",
                                 alignItems = "flex-start",
@@ -109,82 +183,13 @@ function ChapterSelectScreen.Create(ctx)
                 },
             },
             GlassCard {
-                gap = 16,
-                paddingTop = 20,
-                paddingBottom = 20,
+                gap = 10,
                 backgroundColor = { 255, 250, 246, 220 },
-                borderColor = { 255, 255, 255, 122 },
                 children = {
                     UI.Label {
-                        text = chapter.districtName or "云朵猫镇",
-                        fontSize = ThemeTokens.typography.caption,
-                        fontColor = colors.textSecondary,
-                    },
-                    UI.Label {
-                        text = chapter.tagline or "帮小猫把彩虹瓶子整理整齐。",
-                        fontSize = ThemeTokens.typography.title,
-                        fontColor = colors.textPrimary,
-                    },
-                    UI.Label {
-                        text = "这里有奶油屋顶、猫耳气球和软绵绵的云朵坡道，是最适合开始倒水冒险的第一座乐园。",
+                        text = "每章 20 关，最后两章会把盘面扩到 12 个瓶子。",
                         fontSize = ThemeTokens.typography.body,
                         fontColor = colors.textSecondary,
-                    },
-                    UI.Panel {
-                        width = "100%",
-                        flexDirection = "row",
-                        flexWrap = "wrap",
-                        gap = 8,
-                        children = {
-                            StatChip {
-                                label = "氛围",
-                                value = "软萌明亮",
-                                valueColor = colors.mangoGlow,
-                                width = "31%",
-                            },
-                            StatChip {
-                                label = "特色",
-                                value = "猫咪气球",
-                                valueColor = colors.jadeMint,
-                                width = "31%",
-                            },
-                            StatChip {
-                                label = "玩法",
-                                value = "轻松倒水",
-                                valueColor = colors.coralFizz,
-                                width = "31%",
-                            },
-                        },
-                    },
-                    UI.Panel {
-                        width = "100%",
-                        flexDirection = "row",
-                        justifyContent = "space-between",
-                        gap = 10,
-                        children = {
-                            SoftButton {
-                                text = "返回首页",
-                                width = 136,
-                                height = 52,
-                                accent = "violet",
-                                onClick = function()
-                                    if ctx.onBack then
-                                        ctx.onBack()
-                                    end
-                                end,
-                            },
-                            SoftButton {
-                                text = "进入关卡",
-                                width = 150,
-                                height = 52,
-                                accent = "mint",
-                                onClick = function()
-                                    if ctx.onSelectChapter then
-                                        ctx.onSelectChapter(chapter.id)
-                                    end
-                                end,
-                            },
-                        },
                     },
                 },
             },
@@ -193,21 +198,32 @@ function ChapterSelectScreen.Create(ctx)
                 gap = 12,
                 backgroundColor = { 255, 251, 248, 205 },
                 children = {
-                    UI.Label {
-                        text = "下一站乐园",
-                        fontSize = ThemeTokens.typography.section,
-                        fontColor = colors.textPrimary,
+                    UI.Panel {
+                        width = "100%",
+                        flexDirection = "row",
+                        flexWrap = "wrap",
+                        justifyContent = "space-between",
+                        gap = 10,
+                        children = chapterCards,
                     },
-                    BuildLockedCard(
-                        "曲奇海港",
-                        "码头边会堆满饼干箱和鱼骨路标，更多多瓶组合和路线障碍会从这里开始。",
-                        colors.cableViolet
-                    ),
-                    BuildLockedCard(
-                        "星星游乐街",
-                        "夜空下的游乐街满是旋转星灯和弹跳彩桥，适合加入更多趣味机关。",
-                        colors.mangoGlow
-                    ),
+                },
+            },
+            UI.Panel {
+                width = "100%",
+                flexDirection = "row",
+                justifyContent = "flex-end",
+                children = {
+                    SoftButton {
+                        text = "返回首页",
+                        width = 148,
+                        height = 52,
+                        accent = "violet",
+                        onClick = function()
+                            if ctx.onBack then
+                                ctx.onBack()
+                            end
+                        end,
+                    },
                 },
             },
         },

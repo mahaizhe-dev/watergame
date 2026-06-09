@@ -17,6 +17,7 @@ function Start()
     UI.SetRoot(controller_.root)
 
     SubscribeToEvent("KeyDown", "HandleKeyDown")
+    SubscribeToEvent("Update", "HandleUpdate")
 end
 
 function Stop()
@@ -32,4 +33,15 @@ function HandleKeyDown(eventType, eventData)
 
     local key = eventData["Key"]:GetInt()
     controller_.HandleKey(key)
+end
+
+---@param eventType string
+---@param eventData UpdateEventData
+function HandleUpdate(eventType, eventData)
+    if not controller_ or not controller_.HandleUpdate then
+        return
+    end
+
+    local dt = eventData["TimeStep"]:GetFloat()
+    controller_.HandleUpdate(dt)
 end
